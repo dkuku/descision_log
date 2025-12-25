@@ -33,6 +33,66 @@ defmodule DecisionLog do
       iex> DecisionLog.log!(:auth, :user_check, :valid)
       iex> DecisionLog.close()
       ["default_validation: :passed", "auth_user_check: :valid"]
+
+  ## Per-Entry Formatters
+
+  Pass a formatter function to `log/3`, `trace/3`, or `tagged/3` for context-specific formatting:
+
+      DecisionLog.start_tag(:auth)
+      DecisionLog.trace(user, :user, fn u -> "User<\#{u.id}>" end)
+      DecisionLog.close()
+      # ["auth_user: User<123>"]
+
+  ## Plug Integration
+
+  Initialize decision logging at request start and store at the end:
+
+      defmodule MyApp.Plugs.DecisionLog do
+        @behaviour Plug
+        import Plug.Conn
+
+        def init(opts), do: opts
+
+        def call(conn, _opts) do
+          request_id = get_req_header(conn, "x-request-id") |> List.first() || Ecto.UUID.generate()
+
+          DecisionLog.start_tag(:request)
+          DecisionLog.log_all(
+            request_id: request_id,
+            method: conn.method,
+            path: conn.request_path
+          )
+
+          conn
+          |> assign(:request_id, request_id)
+          |> register_before_send(&save_decision_log/1)
+        end
+
+        defp save_decision_log(conn) do
+          DecisionLog.tag(:response)
+          DecisionLog.log(:status, conn.status)
+
+          log = DecisionLog.close()
+          compressed = DecisionLog.Compression.compress(log)
+
+          Task.start(fn ->
+            MyApp.DecisionLogs.store(conn.assigns.request_id, compressed)
+          end)
+
+          conn
+        end
+      end
+
+  Any code in controllers or contexts can then add to the log:
+
+      def create(conn, params) do
+        DecisionLog.tag(:order)
+
+        with {:ok, order} <- create_order(params) |> DecisionLog.trace(:created) do
+          DecisionLog.log(:outcome, :success)
+          json(conn, order)
+        end
+      end
   """
 
   @key :decision_log

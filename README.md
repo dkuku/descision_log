@@ -84,6 +84,57 @@ with true <- DecisionLog.trace(check_user(input), :user_valid),
 end
 ```
 
+#### Custom Formatters
+
+By default, values are formatted using `inspect/1` at close time. You can pass a custom formatter to `close/1`:
+
+```elixir
+DecisionLog.start_tag(:section)
+DecisionLog.log(:date, ~D[2025-01-15])
+DecisionLog.log(:count, 42)
+
+formatter = fn
+  %Date{} = d -> Date.to_string(d)
+  other -> inspect(other)
+end
+
+log = DecisionLog.close(formatter: formatter)
+# ["section_date: 2025-01-15", "section_count: 42"]
+```
+
+#### Per-Entry Formatters
+
+For context-specific formatting, pass a formatter directly to `log/3`, `trace/3`, or `tagged/3`. The per-entry formatter takes precedence over the default:
+
+```elixir
+defp format_user_summary(user), do: "User<#{user.id}>"
+defp format_user_detail(user), do: "User<#{user.id}, #{user.email}, #{user.role}>"
+
+DecisionLog.start_tag(:auth)
+DecisionLog.trace(user, :authenticated_user, &format_user_detail/1)
+
+DecisionLog.tag(:audit)
+DecisionLog.trace(user, :actor, &format_user_summary/1)
+
+log = DecisionLog.close()
+# ["auth_authenticated_user: User<123, alice@example.com, admin>",
+#  "audit_actor: User<123>"]
+```
+
+This is useful when the same struct needs different representations in different contexts:
+
+```elixir
+# In a benefits calculator - show allowances in calculate context
+benefit
+|> DecisionLog.trace(:add_on_benefit, fn b ->
+  "Benefit<id: #{b.id}, sms: #{b.monthly_sms_allowance}>"
+end)
+
+# Later in phone support context - just show id
+benefit
+|> DecisionLog.trace(:benefit, fn b -> "Benefit<id: #{b.id}>" end)
+```
+
 ### Explicit API (functional, pipe-friendly)
 
 ```elixir
@@ -299,11 +350,15 @@ end
 Compress decision logs for efficient storage in PostgreSQL:
 
 ```elixir
-# Compress log strings
+# With implicit API - compress after close
+DecisionLog.start_tag(:request)
+DecisionLog.log(:method, "POST")
 log = DecisionLog.close()
 compressed = DecisionLog.Compression.compress(log)
 
-# Or compress directly from context
+# With explicit API - compress context directly
+alias DecisionLog.Explicit, as: Log
+context = Log.new(:request) |> Log.log(:method, "POST")
 compressed = DecisionLog.Compression.compress_context(context)
 
 # Decompress
@@ -335,6 +390,77 @@ For complete PostgreSQL setup instructions:
 
 ```elixir
 IO.puts(DecisionLog.Compression.postgresql_setup())
+```
+
+### Plug Integration
+
+Initialize decision logging at the start of a request and store it at the end:
+
+```elixir
+defmodule MyApp.Plugs.DecisionLog do
+  @behaviour Plug
+
+  import Plug.Conn
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    request_id = get_req_header(conn, "x-request-id") |> List.first() || Ecto.UUID.generate()
+
+    # Initialize log with request metadata
+    DecisionLog.start_tag(:request)
+    DecisionLog.log_all(
+      request_id: request_id,
+      method: conn.method,
+      path: conn.request_path,
+      user_agent: get_req_header(conn, "user-agent") |> List.first()
+    )
+
+    # Store request_id for later and register callback to save log
+    conn
+    |> assign(:request_id, request_id)
+    |> register_before_send(&save_decision_log/1)
+  end
+
+  defp save_decision_log(conn) do
+    DecisionLog.tag(:response)
+    DecisionLog.log(:status, conn.status)
+
+    log = DecisionLog.close()
+    compressed = DecisionLog.Compression.compress(log)
+
+    # Store asynchronously to not block response
+    Task.start(fn ->
+      MyApp.DecisionLogs.store(conn.assigns.request_id, compressed)
+    end)
+
+    conn
+  end
+end
+```
+
+Add to your endpoint or router:
+
+```elixir
+plug MyApp.Plugs.DecisionLog
+```
+
+Now any code in your controllers/contexts can add to the log:
+
+```elixir
+def create(conn, params) do
+  DecisionLog.tag(:validation)
+
+  with {:ok, user} <- validate_user(params) |> DecisionLog.trace(:user_valid),
+       {:ok, order} <- create_order(user, params) |> DecisionLog.trace(:order_created) do
+    DecisionLog.log(:outcome, :success)
+    json(conn, order)
+  else
+    {:error, reason} ->
+      DecisionLog.log(:outcome, {:failed, reason})
+      conn |> put_status(422) |> json(%{error: reason})
+  end
+end
 ```
 
 ### Ecto Integration

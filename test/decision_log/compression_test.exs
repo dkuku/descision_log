@@ -81,7 +81,8 @@ defmodule DecisionLog.CompressionTest do
   describe "compress_context/1" do
     test "compresses explicit context directly" do
       context =
-        Explicit.new(:request)
+        :request
+        |> Explicit.new()
         |> Explicit.log(:method, "GET")
         |> Explicit.log(:path, "/api/users")
 
@@ -95,7 +96,8 @@ defmodule DecisionLog.CompressionTest do
 
     test "handles complex values" do
       context =
-        Explicit.new(:decision)
+        :decision
+        |> Explicit.new()
         |> Explicit.log(:input, %{user_id: 123, action: :create})
         |> Explicit.log(:result, {:ok, "created"})
 
@@ -112,7 +114,8 @@ defmodule DecisionLog.CompressionTest do
     test "full workflow: create, log, compress, decompress" do
       # Create a realistic decision log
       log =
-        Explicit.new(:validation)
+        :validation
+        |> Explicit.new()
         |> Explicit.log(:input_received, true)
         |> Explicit.log(:schema_check, :passed)
         |> Explicit.tag(:authorization)
@@ -137,7 +140,8 @@ defmodule DecisionLog.CompressionTest do
 
     test "preserves special characters and unicode" do
       log =
-        Explicit.new(:test)
+        :test
+        |> Explicit.new()
         |> Explicit.log(:message, "Hello, 世界! 🌍")
         |> Explicit.log(:path, "/api/users?name=José&age=30")
         |> Explicit.close()
@@ -150,7 +154,8 @@ defmodule DecisionLog.CompressionTest do
 
     test "handles multiline values" do
       log =
-        Explicit.new(:error)
+        :error
+        |> Explicit.new()
         |> Explicit.log(:stacktrace, "Line 1\nLine 2\nLine 3")
         |> Explicit.close()
 

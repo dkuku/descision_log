@@ -1,7 +1,9 @@
 defmodule DecisionLog.DemoTest do
   use ExUnit.Case, async: true
 
-  alias DecisionLog.Demo.{Implicit, Explicit, Decorated}
+  alias DecisionLog.Demo.Decorated
+  alias DecisionLog.Demo.Explicit
+  alias DecisionLog.Demo.Implicit
 
   # Test fixtures
   defp valid_order do

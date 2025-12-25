@@ -488,7 +488,7 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.get()
 
-      assert Process.get(:decision_log) != nil
+      assert Process.get(:decision_log)
       assert is_list(result)
     end
 

@@ -2,6 +2,7 @@ defmodule DecisionLog.DecoratorTest do
   use ExUnit.Case, async: true
 
   defmodule TestModule do
+    @moduledoc false
     use DecisionLog.Decorator
 
     @decorate decision_log()

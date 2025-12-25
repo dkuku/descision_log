@@ -56,7 +56,8 @@ defmodule DecisionLog.MixProject do
   defp deps do
     [
       {:decorator, "~> 1.4"},
-      {:ex_doc, "~> 0.35", only: :dev, runtime: false}
+      {:styler, "~> 1.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.39", only: :dev, runtime: false}
     ]
   end
 end

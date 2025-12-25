@@ -29,7 +29,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "log/3" do
     test "logs a value with explicit label to current section" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:my_label, "some value")
 
       [{:section, steps} | _] = context
@@ -39,7 +40,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "logs multiple values to same section" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:first, "value1")
         |> Explicit.log(:second, "value2")
 
@@ -52,7 +54,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "log/2" do
     test "logs a value with auto-generated step label" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log("first value")
 
       [{:section, steps} | _] = context
@@ -62,7 +65,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "auto-generates sequential step labels" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log("first value")
         |> Explicit.log("second value")
 
@@ -75,7 +79,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "log_all/2" do
     test "logs multiple key-value pairs at once" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log_all(first: "a", second: "b", third: "c")
 
       [{:section, steps} | _] = context
@@ -85,7 +90,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "can be mixed with regular log calls" do
       result =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:before, 1)
         |> Explicit.log_all(batch_a: "x", batch_b: "y")
         |> Explicit.log(:after, 2)
@@ -101,7 +107,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "works with empty keyword list" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log_all([])
 
       [{:section, steps} | _] = context
@@ -191,7 +198,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "close/1" do
     test "returns a list of formatted strings" do
       result =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:step, "value")
         |> Explicit.close()
 
@@ -206,7 +214,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "flattens multiple sections into an ordered list of strings" do
       result =
-        Explicit.new(:section_a)
+        :section_a
+        |> Explicit.new()
         |> Explicit.log(:first, "value1")
         |> Explicit.log(:second, "value2")
         |> Explicit.tag(:section_b)
@@ -222,7 +231,8 @@ defmodule DecisionLog.ExplicitTest do
 
     test "result is JSON encodable" do
       result =
-        Explicit.new(:test)
+        :test
+        |> Explicit.new()
         |> Explicit.log(:key, %{nested: "data"})
         |> Explicit.close()
 
@@ -237,7 +247,8 @@ defmodule DecisionLog.ExplicitTest do
       end
 
       result =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:date, ~D[2025-01-15])
         |> Explicit.log(:count, 42)
         |> Explicit.close(formatter: formatter)
@@ -255,7 +266,8 @@ defmodule DecisionLog.ExplicitTest do
       end
 
       result =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:datetime, ~U[2025-01-15 10:30:00Z])
         |> Explicit.log(:status, :ok)
         |> Explicit.close(formatter: formatter)
@@ -270,7 +282,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "get/1" do
     test "returns current log in readable format" do
       context =
-        Explicit.new(:section)
+        :section
+        |> Explicit.new()
         |> Explicit.log(:step, "value")
 
       result = Explicit.get(context)
@@ -307,7 +320,8 @@ defmodule DecisionLog.ExplicitTest do
   describe "pipe-friendly API" do
     test "supports full pipeline usage" do
       result =
-        Explicit.new(:init)
+        :init
+        |> Explicit.new()
         |> Explicit.log(:step1, "a")
         |> Explicit.tag(:middle)
         |> Explicit.log(:step2, "b")
