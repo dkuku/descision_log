@@ -35,6 +35,68 @@ defmodule DecisionLog.CompressionTest do
     end
   end
 
+  describe "compress/2 with options" do
+    test "returns {:raw, data} for small logs with min_size: :auto" do
+      small_log = ["step_0: :ok"]
+      assert {:raw, data} = Compression.compress(small_log, min_size: :auto)
+      assert data == "step_0: :ok"
+    end
+
+    test "returns {:compressed, data} for large logs with min_size: :auto" do
+      large_log = Enum.map(1..20, &"step_#{&1}: \"value_#{&1}\"")
+      assert {:compressed, data} = Compression.compress(large_log, min_size: :auto)
+      assert is_binary(data)
+      # Verify it's actually compressed
+      {:ok, recovered} = Compression.decompress(data)
+      assert recovered == large_log
+    end
+
+    test "respects custom min_size threshold" do
+      log = ["a: 1", "b: 2", "c: 3"]
+      joined_size = byte_size(Enum.join(log, "\n"))
+
+      # Below threshold -> raw
+      assert {:raw, _} = Compression.compress(log, min_size: joined_size + 1)
+
+      # At or above threshold -> compressed
+      assert {:compressed, _} = Compression.compress(log, min_size: joined_size)
+    end
+
+    test "min_size: 0 always compresses" do
+      small_log = ["x: 1"]
+      assert {:compressed, _} = Compression.compress(small_log, min_size: 0)
+    end
+  end
+
+  describe "decompress_result/1" do
+    test "decompresses {:raw, data} result" do
+      result = {:raw, "step_0: :ok\nstep_1: :done"}
+      assert {:ok, ["step_0: :ok", "step_1: :done"]} = Compression.decompress_result(result)
+    end
+
+    test "decompresses {:compressed, data} result" do
+      log = ["step_0: :ok", "step_1: :done"]
+      compressed = Compression.compress(log)
+      result = {:compressed, compressed}
+
+      assert {:ok, ^log} = Compression.decompress_result(result)
+    end
+
+    test "round-trip with compress/2" do
+      log = ["entry_1: :a", "entry_2: :b"]
+
+      # Small log -> raw
+      result = Compression.compress(log, min_size: 1000)
+      assert {:raw, _} = result
+      assert {:ok, ^log} = Compression.decompress_result(result)
+
+      # Force compression
+      result = Compression.compress(log, min_size: 0)
+      assert {:compressed, _} = result
+      assert {:ok, ^log} = Compression.decompress_result(result)
+    end
+  end
+
   describe "decompress/1" do
     test "decompresses back to original list" do
       original = ["section_a_first: \"value1\"", "section_a_second: \"value2\""]
@@ -107,6 +169,26 @@ defmodule DecisionLog.CompressionTest do
       assert length(decompressed) == 2
       assert Enum.at(decompressed, 0) =~ "decision_input:"
       assert Enum.at(decompressed, 1) =~ "decision_result:"
+    end
+
+    test "with min_size: :auto returns {:raw, _} for small context" do
+      context =
+        :test
+        |> Explicit.new()
+        |> Explicit.log(:ok, true)
+
+      result = Compression.compress_context(context, min_size: :auto)
+      assert {:raw, _} = result
+    end
+
+    test "with min_size: :auto returns {:compressed, _} for large context" do
+      context =
+        Enum.reduce(1..20, Explicit.new(:test), fn i, ctx ->
+          Explicit.log(ctx, String.to_atom("key_#{i}"), "value_#{i}")
+        end)
+
+      result = Compression.compress_context(context, min_size: :auto)
+      assert {:compressed, _} = result
     end
   end
 

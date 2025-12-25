@@ -28,6 +28,7 @@ defmodule DecisionLog.MixProject do
     [
       name: "decision_log",
       licenses: ["MIT"],
+      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md),
       links: %{
         "GitHub" => @source_url
       }

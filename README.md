@@ -129,10 +129,12 @@ benefit
 |> DecisionLog.trace(:add_on_benefit, fn b ->
   "Benefit<id: #{b.id}, sms: #{b.monthly_sms_allowance}>"
 end)
+# Logs: "pricing_add_on_benefit: Benefit<id: 42, sms: 100>"
 
 # Later in phone support context - just show id
 benefit
 |> DecisionLog.trace(:benefit, fn b -> "Benefit<id: #{b.id}>" end)
+# Logs: "support_benefit: Benefit<id: 42>"
 ```
 
 ### Explicit API (functional, pipe-friendly)
@@ -347,22 +349,45 @@ end
 
 ## Compression for PostgreSQL Storage
 
-Compress decision logs for efficient storage in PostgreSQL:
+Compress decision logs for efficient storage in PostgreSQL.
+
+### When to Compress
+
+Gzip has ~20 byte header overhead, so compression only helps for larger logs:
+
+| Log Size | Entries | Result |
+|----------|---------|--------|
+| < 100 bytes | 1-4 | Larger (skip) |
+| 100-300 bytes | 5-10 | ~40-60% savings |
+| 300+ bytes | 10+ | ~60-85% savings |
+
+### Basic Compression
 
 ```elixir
-# With implicit API - compress after close
-DecisionLog.start_tag(:request)
-DecisionLog.log(:method, "POST")
+# Always compress (use when you know logs are large)
 log = DecisionLog.close()
 compressed = DecisionLog.Compression.compress(log)
 
-# With explicit API - compress context directly
-alias DecisionLog.Explicit, as: Log
-context = Log.new(:request) |> Log.log(:method, "POST")
-compressed = DecisionLog.Compression.compress_context(context)
-
 # Decompress
 {:ok, log} = DecisionLog.Compression.decompress(compressed)
+```
+
+### Smart Compression (Recommended)
+
+Use `compress/2` with `min_size: :auto` to skip compression for small logs:
+
+```elixir
+log = DecisionLog.close()
+
+case DecisionLog.Compression.compress(log, min_size: :auto) do
+  {:compressed, data} -> store_binary(data, compressed: true)
+  {:raw, data} -> store_binary(data, compressed: false)
+end
+
+# Or with explicit API
+alias DecisionLog.Explicit, as: Log
+context = Log.new(:request) |> Log.log(:method, "POST")
+result = DecisionLog.Compression.compress_context(context, min_size: :auto)
 ```
 
 ### PostgreSQL Decompression

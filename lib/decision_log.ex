@@ -98,15 +98,35 @@ defmodule DecisionLog do
   @key :decision_log
   @default_tag :default
 
-  @doc "Start a new decision log context"
+  @typedoc "Internal log state stored in process dictionary"
+  @type log_state :: [{atom(), [{atom(), term()} | {atom(), term(), (term() -> String.t())}]}]
+
+  @doc """
+  Start a new decision log context.
+
+  Returns the previous log state (or `nil` if none existed).
+  """
+  @spec start() :: log_state() | nil
   def start do
     Process.put(@key, [])
   end
 
-  def start_tag(label) do
+  @doc """
+  Start a new decision log context with an initial section tag.
+
+  Returns the previous log state (or `nil` if none existed).
+  """
+  @spec start_tag(atom()) :: log_state() | nil
+  def start_tag(label) when is_atom(label) do
     Process.put(@key, [{label, []}])
   end
 
+  @doc """
+  Add a new tagged section to the current log.
+
+  Returns the previous log state. Raises if no log is initialized.
+  """
+  @spec tag(atom()) :: log_state()
   def tag(label) when is_atom(label) do
     case Process.get(@key) do
       nil ->
@@ -130,6 +150,9 @@ defmodule DecisionLog do
   @doc """
   Log a single key-value pair.
 
+  Returns the updated log state, or `:ok` if no log is active.
+  The return value can be useful for conditional logging patterns.
+
   ## Examples
 
       # Explicit label and value
@@ -141,6 +164,7 @@ defmodule DecisionLog do
       # With custom formatter
       DecisionLog.log(:benefit, benefit, &format_benefit/1)
   """
+  @spec log(atom(), term(), (term() -> String.t())) :: log_state() | :ok
   def log(label, value, formatter) when is_atom(label) and is_function(formatter, 1) do
     case Process.get(@key) do
       nil ->
@@ -151,6 +175,7 @@ defmodule DecisionLog do
     end
   end
 
+  @spec log(atom(), term()) :: log_state() | :ok
   def log(label, value) when is_atom(label) do
     case Process.get(@key) do
       nil ->
@@ -161,6 +186,7 @@ defmodule DecisionLog do
     end
   end
 
+  @spec log(term()) :: log_state() | :ok
   def log(value) do
     case Process.get(@key) do
       nil ->
@@ -175,10 +201,13 @@ defmodule DecisionLog do
   @doc """
   Log multiple key-value pairs at once.
 
+  Returns the updated log state, or `:ok` if no log is active.
+
   ## Example
 
       DecisionLog.log_all(input_start_date: date, provider_id: 123, time_zone: "UTC")
   """
+  @spec log_all(keyword()) :: log_state() | :ok
   def log_all(items) when is_list(items) do
     case Process.get(@key) do
       nil ->
