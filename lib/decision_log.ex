@@ -73,10 +73,9 @@ defmodule DecisionLog do
           DecisionLog.log(:status, conn.status)
 
           log = DecisionLog.close()
-          compressed = DecisionLog.Compression.compress(log)
 
           Task.start(fn ->
-            MyApp.DecisionLogs.store(conn.assigns.request_id, compressed)
+            MyApp.DecisionLogs.store(conn.assigns.request_id, log)
           end)
 
           conn

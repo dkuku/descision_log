@@ -21,7 +21,7 @@ defmodule DecisionLog.MixProject do
   end
 
   defp description do
-    "A lightweight Elixir library for tracking decisions made during processing. Provides structured logging with compression support for PostgreSQL storage."
+    "A lightweight Elixir library for tracking decisions made during processing."
   end
 
   defp package do
