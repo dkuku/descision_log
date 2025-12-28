@@ -98,10 +98,10 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.close()
 
       assert result == [
-               "section_before: 1",
-               "section_batch_a: \"x\"",
-               "section_batch_b: \"y\"",
-               "section_after: 2"
+               "section.before: 1",
+               "section.batch_a: \"x\"",
+               "section.batch_b: \"y\"",
+               "section.after: 2"
              ]
     end
 
@@ -142,8 +142,8 @@ defmodule DecisionLog.ExplicitTest do
       log = Explicit.close(final_ctx)
 
       assert log == [
-               "section_positive_check: true",
-               "section_status_check: :ok"
+               "section.positive_check: true",
+               "section.status_check: :ok"
              ]
     end
 
@@ -159,9 +159,9 @@ defmodule DecisionLog.ExplicitTest do
       log = Explicit.close(ctx)
 
       assert log == [
-               "section_input: 10",
-               "section_doubled: 20",
-               "section_final: 25"
+               "section.input: 10",
+               "section.doubled: 20",
+               "section.final: 25"
              ]
     end
   end
@@ -189,8 +189,8 @@ defmodule DecisionLog.ExplicitTest do
       log = Explicit.close(ctx)
 
       assert log == [
-               "section_method: \"POST\"",
-               "section_path: \"/api\""
+               "section.method: \"POST\"",
+               "section.path: \"/api\""
              ]
     end
   end
@@ -203,7 +203,7 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.log(:step, "value")
         |> Explicit.close()
 
-      assert result == ["section_step: \"value\""]
+      assert result == ["section.step: \"value\""]
     end
 
     test "returns empty list for empty context" do
@@ -223,9 +223,9 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.close()
 
       assert result == [
-               "section_a_first: \"value1\"",
-               "section_a_second: \"value2\"",
-               "section_b_other_step: \"value\""
+               "section_a.first: \"value1\"",
+               "section_a.second: \"value2\"",
+               "section_b.other_step: \"value\""
              ]
     end
 
@@ -254,8 +254,8 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.close(formatter: formatter)
 
       assert result == [
-               "section_date: 2025-01-15",
-               "section_count: 42"
+               "section.date: 2025-01-15",
+               "section.count: 42"
              ]
     end
 
@@ -273,8 +273,8 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.close(formatter: formatter)
 
       assert result == [
-               "section_datetime: 2025-01-15T10:30:00Z",
-               "section_status: :ok"
+               "section.datetime: 2025-01-15T10:30:00Z",
+               "section.status: :ok"
              ]
     end
   end
@@ -331,10 +331,10 @@ defmodule DecisionLog.ExplicitTest do
         |> Explicit.close()
 
       assert result == [
-               "init_step1: \"a\"",
-               "middle_step2: \"b\"",
-               "middle_step_1: \"auto\"",
-               "final_done: true"
+               "init.step1: \"a\"",
+               "middle.step2: \"b\"",
+               "middle.step_1: \"auto\"",
+               "final.done: true"
              ]
     end
   end
@@ -348,7 +348,7 @@ defmodule DecisionLog.ExplicitTest do
         end)
 
       assert result == {:ok, 42}
-      assert log == ["order_status: :ok"]
+      assert log == ["order.status: :ok"]
     end
 
     test "supports multiple tags within wrapped function" do
@@ -366,8 +366,8 @@ defmodule DecisionLog.ExplicitTest do
       assert result == :done
 
       assert log == [
-               "validation_user: :valid",
-               "pricing_total: 100"
+               "validation.user: :valid",
+               "pricing.total: 100"
              ]
     end
 
@@ -404,9 +404,9 @@ defmodule DecisionLog.ExplicitTest do
       assert result == 10
 
       assert log == [
-               "process_input: 5",
-               "process_valid: true",
-               "calculation_result: 10"
+               "process.input: 5",
+               "process.valid: true",
+               "calculation.result: 10"
              ]
     end
 
@@ -422,7 +422,7 @@ defmodule DecisionLog.ExplicitTest do
         )
 
       assert result == :ok
-      assert log == ["order_date: 2025-01-15"]
+      assert log == ["order.date: 2025-01-15"]
     end
 
     test "accepts inline formatter function" do
@@ -448,8 +448,8 @@ defmodule DecisionLog.ExplicitTest do
       assert result == :done
 
       assert log == [
-               "process_timestamp: 2025-01-15T10:30:00Z",
-               "process_count: 5"
+               "process.timestamp: 2025-01-15T10:30:00Z",
+               "process.count: 5"
              ]
     end
   end

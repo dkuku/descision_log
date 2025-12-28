@@ -84,7 +84,7 @@ defmodule DecisionLog.DecoratorTest do
       TestModule.simple_function(3)
       log = DecisionLog.close()
 
-      assert Enum.all?(log, &String.starts_with?(&1, "simple_function_"))
+      assert Enum.all?(log, &String.starts_with?(&1, "simple_function."))
     end
 
     test "accepts custom tag as atom" do
@@ -94,7 +94,7 @@ defmodule DecisionLog.DecoratorTest do
       assert result == 11
 
       log = DecisionLog.close()
-      assert Enum.all?(log, &String.starts_with?(&1, "custom_tag_"))
+      assert Enum.all?(log, &String.starts_with?(&1, "custom_tag."))
     end
 
     test "silently skips logging when log not initialized" do
@@ -120,9 +120,9 @@ defmodule DecisionLog.DecoratorTest do
       log = DecisionLog.close()
 
       # Verify entries from different sections are present
-      assert Enum.any?(log, &String.starts_with?(&1, "with_sections_"))
-      assert Enum.any?(log, &String.starts_with?(&1, "middle_"))
-      assert Enum.any?(log, &String.starts_with?(&1, "finish_"))
+      assert Enum.any?(log, &String.starts_with?(&1, "with_sections."))
+      assert Enum.any?(log, &String.starts_with?(&1, "middle."))
+      assert Enum.any?(log, &String.starts_with?(&1, "finish."))
     end
   end
 
@@ -144,9 +144,9 @@ defmodule DecisionLog.DecoratorTest do
       assert result_sub == 7
       assert result_mul == 30
 
-      assert "math_operation: :add" in log_add
-      assert "math_operation: :sub" in log_sub
-      assert "math_operation: :mul" in log_mul
+      assert "math.operation: :add" in log_add
+      assert "math.operation: :sub" in log_sub
+      assert "math.operation: :mul" in log_mul
     end
   end
 
@@ -159,16 +159,16 @@ defmodule DecisionLog.DecoratorTest do
       assert result == 11
 
       # Both outer and inner sections should be in the log
-      assert Enum.any?(log, &String.starts_with?(&1, "outer_"))
-      assert Enum.any?(log, &String.starts_with?(&1, "inner_"))
+      assert Enum.any?(log, &String.starts_with?(&1, "outer."))
+      assert Enum.any?(log, &String.starts_with?(&1, "inner."))
 
       # Note: after inner_function adds :inner tag, subsequent logs
       # in outer_function are under :inner section (tags don't "restore")
-      assert "outer_outer_input: 5" in log
-      assert "inner_inner_input: 10" in log
-      assert "inner_inner_output: 11" in log
+      assert "outer.outer_input: 5" in log
+      assert "inner.inner_input: 10" in log
+      assert "inner.inner_output: 11" in log
       # outer_output is logged after inner returns, so it's under :inner tag
-      assert "inner_outer_output: 11" in log
+      assert "inner.outer_output: 11" in log
     end
 
     test "nested calls maintain chronological ordering" do
@@ -177,8 +177,8 @@ defmodule DecisionLog.DecoratorTest do
       log = DecisionLog.close()
 
       # Find indices to verify chronological order
-      outer_input_idx = Enum.find_index(log, &(&1 == "outer_outer_input: 3"))
-      inner_input_idx = Enum.find_index(log, &(&1 =~ "inner_inner_input"))
+      outer_input_idx = Enum.find_index(log, &(&1 == "outer.outer_input: 3"))
+      inner_input_idx = Enum.find_index(log, &(&1 =~ "inner.inner_input"))
       outer_output_idx = Enum.find_index(log, &(&1 =~ "outer_output"))
 
       assert outer_input_idx < inner_input_idx
@@ -197,11 +197,11 @@ defmodule DecisionLog.DecoratorTest do
       log2 = DecisionLog.close()
 
       # Logs should be independent
-      assert "simple_function_input: 1" in log1
-      assert "simple_function_input: 2" in log2
+      assert "simple_function.input: 1" in log1
+      assert "simple_function.input: 2" in log2
 
-      refute "simple_function_input: 1" in log2
-      refute "simple_function_input: 2" in log1
+      refute "simple_function.input: 1" in log2
+      refute "simple_function.input: 2" in log1
     end
   end
 end

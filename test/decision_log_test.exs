@@ -67,7 +67,7 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.close()
 
-      assert result == ["section_date: 2025-01-15"]
+      assert result == ["section.date: 2025-01-15"]
     end
 
     test "per-entry formatter overrides default formatter" do
@@ -78,7 +78,7 @@ defmodule DecisionLogTest do
       # Default formatter would use inspect for both
       result = DecisionLog.close(formatter: fn _ -> "DEFAULT" end)
 
-      assert result == ["section_date: 2025-01-15", "section_count: DEFAULT"]
+      assert result == ["section.date: 2025-01-15", "section.count: DEFAULT"]
     end
 
     test "is a no-op when log not initialized" do
@@ -130,10 +130,10 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_before: 1",
-               "section_batch_a: \"x\"",
-               "section_batch_b: \"y\"",
-               "section_after: 2"
+               "section.before: 1",
+               "section.batch_a: \"x\"",
+               "section.batch_b: \"y\"",
+               "section.after: 2"
              ]
     end
 
@@ -182,9 +182,9 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_input: 10",
-               "section_doubled: 20",
-               "section_final: 25"
+               "section.input: 10",
+               "section.doubled: 20",
+               "section.final: 25"
              ]
     end
 
@@ -202,8 +202,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_positive_check: true",
-               "section_status_check: :ok"
+               "section.positive_check: true",
+               "section.status_check: :ok"
              ]
     end
 
@@ -242,8 +242,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_start_date: 2025-01-15",
-               "section_end_date: 2025-01-25"
+               "section.start_date: 2025-01-15",
+               "section.end_date: 2025-01-25"
              ]
     end
 
@@ -254,7 +254,7 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.close(formatter: fn _ -> "DEFAULT" end)
 
-      assert result == ["section_date: 2025-01-15", "section_status: DEFAULT"]
+      assert result == ["section.date: 2025-01-15", "section.status: DEFAULT"]
     end
 
     test "returns value even when log not initialized" do
@@ -277,8 +277,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "context_a_item: Item#1",
-               "context_b_item: test (1)"
+               "context_a.item: Item#1",
+               "context_b.item: test (1)"
              ]
     end
   end
@@ -306,8 +306,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_method: \"POST\"",
-               "section_path: \"/api\""
+               "section.method: \"POST\"",
+               "section.path: \"/api\""
              ]
     end
 
@@ -358,7 +358,7 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.close()
 
-      assert result == ["section_date: 2025-01-15"]
+      assert result == ["section.date: 2025-01-15"]
     end
 
     test "works in with statements" do
@@ -375,8 +375,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "section_valid: true",
-               "section_date: 2025-01-15"
+               "section.valid: true",
+               "section.date: 2025-01-15"
              ]
     end
 
@@ -387,7 +387,7 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.close(formatter: fn _ -> "DEFAULT" end)
 
-      assert result == ["section_date: 2025-01-15", "section_status: DEFAULT"]
+      assert result == ["section.date: 2025-01-15", "section.status: DEFAULT"]
     end
 
     test "returns tagged tuple even when log not initialized" do
@@ -407,7 +407,7 @@ defmodule DecisionLogTest do
       result = DecisionLog.close()
 
       assert Process.get(:decision_log) == nil
-      assert result == ["section_step: \"value\""]
+      assert result == ["section.step: \"value\""]
     end
 
     test "returns empty list when no log exists" do
@@ -428,9 +428,9 @@ defmodule DecisionLogTest do
       result = DecisionLog.close()
 
       assert result == [
-               "section_a_first: \"value1\"",
-               "section_a_second: \"value2\"",
-               "section_b_other_step: \"value\""
+               "section_a.first: \"value1\"",
+               "section_a.second: \"value2\"",
+               "section_b.other_step: \"value\""
              ]
     end
 
@@ -457,8 +457,8 @@ defmodule DecisionLogTest do
       result = DecisionLog.close(formatter: formatter)
 
       assert result == [
-               "section_date: 2025-01-15",
-               "section_count: 42"
+               "section.date: 2025-01-15",
+               "section.count: 42"
              ]
     end
 
@@ -475,8 +475,8 @@ defmodule DecisionLogTest do
       result = DecisionLog.close(formatter: formatter)
 
       assert result == [
-               "section_datetime: 2025-01-15T10:30:00Z",
-               "section_status: :ok"
+               "section.datetime: 2025-01-15T10:30:00Z",
+               "section.status: :ok"
              ]
     end
   end
@@ -520,7 +520,7 @@ defmodule DecisionLogTest do
         end)
 
       assert result == {:ok, 42}
-      assert log == ["order_status: :ok"]
+      assert log == ["order.status: :ok"]
     end
 
     test "supports multiple tags within wrapped function" do
@@ -535,8 +535,8 @@ defmodule DecisionLogTest do
       assert result == :done
 
       assert log == [
-               "validation_user: :valid",
-               "pricing_total: 100"
+               "validation.user: :valid",
+               "pricing.total: 100"
              ]
     end
 
@@ -579,7 +579,7 @@ defmodule DecisionLogTest do
         )
 
       assert result == :ok
-      assert log == ["order_date: 2025-01-15"]
+      assert log == ["order.date: 2025-01-15"]
     end
 
     test "accepts inline formatter function" do
@@ -602,8 +602,8 @@ defmodule DecisionLogTest do
       assert result == :done
 
       assert log == [
-               "process_timestamp: 2025-01-15T10:30:00Z",
-               "process_count: 5"
+               "process.timestamp: 2025-01-15T10:30:00Z",
+               "process.count: 5"
              ]
     end
   end
@@ -615,7 +615,7 @@ defmodule DecisionLogTest do
       DecisionLog.log!(:check, :passed)
 
       log = DecisionLog.close()
-      assert log == ["default_check: :passed"]
+      assert log == ["default.check: :passed"]
     end
 
     test "uses existing log if already initialized" do
@@ -623,7 +623,7 @@ defmodule DecisionLogTest do
       DecisionLog.log!(:check, :passed)
 
       log = DecisionLog.close()
-      assert log == ["existing_check: :passed"]
+      assert log == ["existing.check: :passed"]
     end
 
     test "logs multiple values sequentially" do
@@ -633,7 +633,7 @@ defmodule DecisionLogTest do
       DecisionLog.log!(:second, "b")
 
       log = DecisionLog.close()
-      assert log == ["default_first: \"a\"", "default_second: \"b\""]
+      assert log == ["default.first: \"a\"", "default.second: \"b\""]
     end
   end
 
@@ -644,7 +644,7 @@ defmodule DecisionLogTest do
       DecisionLog.log!(:validation, :user_check, :valid)
 
       log = DecisionLog.close()
-      assert log == ["validation_user_check: :valid"]
+      assert log == ["validation.user_check: :valid"]
     end
 
     test "switches to tag if different from current" do
@@ -657,9 +657,9 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "validation_check1: :ok",
-               "pricing_total: 100",
-               "validation_check2: :ok"
+               "validation.check1: :ok",
+               "pricing.total: 100",
+               "validation.check2: :ok"
              ]
     end
 
@@ -672,8 +672,8 @@ defmodule DecisionLogTest do
       log = DecisionLog.close()
 
       assert log == [
-               "validation_check1: :ok",
-               "validation_check2: :ok"
+               "validation.check1: :ok",
+               "validation.check2: :ok"
              ]
     end
   end

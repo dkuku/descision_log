@@ -46,8 +46,8 @@ DecisionLog.log(:user_role, "admin")
 DecisionLog.log(:access_granted, true)
 
 log = DecisionLog.close()
-# ["validation_input_valid: true", "validation_schema_check: :passed",
-#  "authorization_user_role: \"admin\"", "authorization_access_granted: true"]
+# ["validation.input_valid: true", "validation.schema_check: :passed",
+#  "authorization.user_role: \"admin\"", "authorization.access_granted: true"]
 ```
 
 #### Batch logging with `log_all/1`
@@ -60,8 +60,8 @@ DecisionLog.log_all(method: "POST", path: "/api/orders", user_id: 123)
 DecisionLog.log(:status, :processed)
 
 log = DecisionLog.close()
-# ["request_method: \"POST\"", "request_path: \"/api/orders\"",
-#  "request_user_id: 123", "request_status: :processed"]
+# ["request.method: \"POST\"", "request.path: \"/api/orders\"",
+#  "request.user_id: 123", "request.status: :processed"]
 ```
 
 #### Transparent logging with `trace/2`
@@ -99,7 +99,7 @@ formatter = fn
 end
 
 log = DecisionLog.close(formatter: formatter)
-# ["section_date: 2025-01-15", "section_count: 42"]
+# ["section.date: 2025-01-15", "section.count: 42"]
 ```
 
 #### Per-Entry Formatters
@@ -117,8 +117,8 @@ DecisionLog.tag(:audit)
 DecisionLog.trace(user, :actor, &format_user_summary/1)
 
 log = DecisionLog.close()
-# ["auth_authenticated_user: User<123, alice@example.com, admin>",
-#  "audit_actor: User<123>"]
+# ["auth.authenticated_user: User<123, alice@example.com, admin>",
+#  "audit.actor: User<123>"]
 ```
 
 This is useful when the same struct needs different representations in different contexts:
@@ -129,12 +129,12 @@ benefit
 |> DecisionLog.trace(:add_on_benefit, fn b ->
   "Benefit<id: #{b.id}, sms: #{b.monthly_sms_allowance}>"
 end)
-# Logs: "pricing_add_on_benefit: Benefit<id: 42, sms: 100>"
+# Logs: "pricing.add_on_benefit: Benefit<id: 42, sms: 100>"
 
 # Later in phone support context - just show id
 benefit
 |> DecisionLog.trace(:benefit, fn b -> "Benefit<id: #{b.id}>" end)
-# Logs: "support_benefit: Benefit<id: 42>"
+# Logs: "support.benefit: Benefit<id: 42>"
 ```
 
 ### Explicit API (functional, pipe-friendly)
@@ -345,6 +345,77 @@ def calculate_shipping(%{shipping: :standard}) do
   DecisionLog.log(:cost, 5.0)
   5.0
 end
+```
+
+## Output Formats
+
+DecisionLog supports two serialization formats:
+
+### String Format (default)
+
+The default format returns a list of strings:
+
+```elixir
+DecisionLog.start_tag(:validation)
+DecisionLog.log(:user_id, 123)
+DecisionLog.log(:status, :ok)
+
+log = DecisionLog.close()
+# ["validation.user_id: 123", "validation.status: :ok"]
+```
+
+### Map Format (PostgreSQL jsonb-friendly)
+
+For structured storage in PostgreSQL `jsonb` columns, use the `:map` format:
+
+```elixir
+log = DecisionLog.close(format: :map)
+# [
+#   %{section: "validation", key: "user_id", value: 123},
+#   %{section: "validation", key: "status", value: "ok"}
+# ]
+```
+
+The map format automatically normalizes values for JSON compatibility:
+- Atoms → strings (`:ok` → `"ok"`)
+- Dates → ISO8601 (`~D[2025-01-15]` → `"2025-01-15"`)
+- DateTime/NaiveDateTime/Time → ISO8601
+- Structs → maps with string keys
+- Tuples → lists
+
+### Global Configuration
+
+Set the default format in your config:
+
+```elixir
+# config/config.exs
+config :decision_log, :default_format, :map
+```
+
+### PostgreSQL Integration
+
+Store decision logs in a `jsonb` column (array order is preserved):
+
+```elixir
+# In your Ecto schema
+field :decision_log, {:array, :map}
+```
+
+Query examples:
+
+```sql
+-- Find orders with a specific section
+SELECT * FROM orders
+WHERE decision_log @> '[{"section": "validation"}]';
+
+-- Find by section and key
+SELECT * FROM orders
+WHERE decision_log @> '[{"section": "pricing", "key": "discount_tier"}]';
+
+-- Extract values
+SELECT elem->>'value'
+FROM orders, jsonb_array_elements(decision_log) AS elem
+WHERE elem->>'key' = 'total';
 ```
 
 ## Examples

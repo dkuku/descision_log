@@ -342,13 +342,18 @@ defmodule DecisionLog do
   end
 
   @doc """
-  Close the log and return formatted output strings.
+  Close the log and return formatted output.
 
   ## Options
 
+    * `:format` - Output format, either `:string` (default) or `:map`.
+      The `:map` format returns a list of maps with `section`, `key`, and `value` fields,
+      ideal for PostgreSQL jsonb storage.
+
     * `:formatter` - A function `(term() -> String.t())` to format values.
-      Defaults to `inspect/1`. This is used as the default formatter for entries
-      that don't have a per-entry formatter specified.
+      Only used with `:string` format. Defaults to `inspect/1`.
+      This is used as the default formatter for entries that don't have
+      a per-entry formatter specified.
 
   ## Per-entry formatters
 
@@ -357,10 +362,14 @@ defmodule DecisionLog do
 
   ## Examples
 
-      # Default formatting
+      # Default string formatting
       DecisionLog.close()
 
-      # Custom default formatter
+      # Map format for PostgreSQL jsonb
+      DecisionLog.close(format: :map)
+      # => [%{section: "validation", key: "user_id", value: 123}, ...]
+
+      # Custom default formatter (string format)
       DecisionLog.close(formatter: &my_pretty_formatter/1)
 
       # Per-entry formatters override the default
@@ -371,23 +380,10 @@ defmodule DecisionLog do
   def close(opts \\ []) do
     log = Process.get(@key, [])
     Process.delete(@key)
-    default_formatter = Keyword.get(opts, :formatter, &inspect/1)
 
     log
     |> view()
-    |> Enum.flat_map(fn {step_name, steps} ->
-      Enum.map(steps, fn entry ->
-        serialize(step_name, entry, default_formatter)
-      end)
-    end)
-  end
-
-  defp serialize(step_name, {label, value, formatter}, _default_formatter) do
-    "#{step_name}_#{label}: #{formatter.(value)}"
-  end
-
-  defp serialize(step_name, {label, value}, default_formatter) do
-    "#{step_name}_#{label}: #{default_formatter.(value)}"
+    |> DecisionLog.Serializer.serialize(opts)
   end
 
   def get do

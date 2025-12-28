@@ -71,17 +71,17 @@ defmodule DecisionLog.DemoTest do
       assert {:ok, %{total: 67.5, discount: 0.10}} = result_implicit
 
       assert log_implicit == [
-               "validation_user_id: 123",
-               "validation_item_count: 2",
-               "validation_user_check: :valid",
-               "validation_items_check: :multiple_items",
-               "pricing_subtotal: 75",
-               "pricing_discount_tier: :silver",
-               "pricing_final_total: 67.5",
-               "fulfillment_user: true",
-               "fulfillment_items: :ok",
-               "fulfillment_shipping: :ok",
-               "fulfillment_fulfillment_status: :approved"
+               "validation.user_id: 123",
+               "validation.item_count: 2",
+               "validation.user_check: :valid",
+               "validation.items_check: :multiple_items",
+               "pricing.subtotal: 75",
+               "pricing.discount_tier: :silver",
+               "pricing.final_total: 67.5",
+               "fulfillment.user: true",
+               "fulfillment.items: :ok",
+               "fulfillment.shipping: :ok",
+               "fulfillment.fulfillment_status: :approved"
              ]
     end
 
@@ -102,7 +102,7 @@ defmodule DecisionLog.DemoTest do
       assert log_explicit == log_decorated
 
       # Verify rejection is logged
-      assert "fulfillment_fulfillment_status: :rejected_items" in log_implicit
+      assert "fulfillment.fulfillment_status: :rejected_items" in log_implicit
     end
 
     test "high value order with gold discount" do
@@ -119,7 +119,7 @@ defmodule DecisionLog.DemoTest do
       assert log_explicit == log_decorated
 
       assert {:ok, %{discount: 0.20}} = result_implicit
-      assert "pricing_discount_tier: :gold" in log_implicit
+      assert "pricing.discount_tier: :gold" in log_implicit
     end
 
     test "invalid shipping order" do
@@ -154,9 +154,9 @@ defmodule DecisionLog.DemoTest do
       assert log_explicit == log_decorated
 
       assert log_implicit == [
-               "shipping_method: :express",
-               "shipping_bulk_order: false",
-               "shipping_cost: 25.0"
+               "shipping.method: :express",
+               "shipping.bulk_order: false",
+               "shipping.cost: 25.0"
              ]
     end
 
@@ -174,7 +174,7 @@ defmodule DecisionLog.DemoTest do
       assert log_implicit == log_explicit
       assert log_explicit == log_decorated
 
-      assert "shipping_bulk_order: true" in log_implicit
+      assert "shipping.bulk_order: true" in log_implicit
     end
 
     test "standard shipping" do
@@ -192,8 +192,8 @@ defmodule DecisionLog.DemoTest do
       assert log_explicit == log_decorated
 
       assert log_implicit == [
-               "shipping_method: :standard",
-               "shipping_cost: 5.0"
+               "shipping.method: :standard",
+               "shipping.cost: 5.0"
              ]
     end
 
@@ -220,7 +220,7 @@ defmodule DecisionLog.DemoTest do
 
       sections =
         log
-        |> Enum.map(&String.split(&1, "_", parts: 2))
+        |> Enum.map(&String.split(&1, ".", parts: 2))
         |> Enum.map(&hd/1)
         |> Enum.uniq()
 
@@ -232,11 +232,11 @@ defmodule DecisionLog.DemoTest do
       {_result, log} = Implicit.process_order(order)
 
       # First entries should be validation
-      assert String.starts_with?(Enum.at(log, 0), "validation_")
+      assert String.starts_with?(Enum.at(log, 0), "validation.")
 
       # Find where pricing starts
-      pricing_idx = Enum.find_index(log, &String.starts_with?(&1, "pricing_"))
-      fulfillment_idx = Enum.find_index(log, &String.starts_with?(&1, "fulfillment_"))
+      pricing_idx = Enum.find_index(log, &String.starts_with?(&1, "pricing."))
+      fulfillment_idx = Enum.find_index(log, &String.starts_with?(&1, "fulfillment."))
 
       assert pricing_idx < fulfillment_idx
     end

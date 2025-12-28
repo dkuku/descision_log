@@ -140,32 +140,34 @@ defmodule DecisionLog.Explicit do
   end
 
   @doc """
-  Close the log and return formatted output strings.
+  Close the log and return formatted output.
 
   ## Options
 
+    * `:format` - Output format, either `:string` (default) or `:map`.
+      The `:map` format returns a list of maps with `section`, `key`, and `value` fields,
+      ideal for PostgreSQL jsonb storage.
+
     * `:formatter` - A function `(term() -> String.t())` to format values.
-      Defaults to `inspect/1`.
+      Only used with `:string` format. Defaults to `inspect/1`.
 
   ## Examples
 
-      # Default formatting
+      # Default string formatting
       Explicit.close(context)
 
-      # Custom formatter
+      # Map format for PostgreSQL jsonb
+      Explicit.close(context, format: :map)
+      # => [%{section: "validation", key: "user_id", value: 123}, ...]
+
+      # Custom formatter (string format)
       Explicit.close(context, formatter: &my_pretty_formatter/1)
   """
-  @spec close(t(), keyword()) :: [String.t()]
+  @spec close(t(), keyword()) :: [String.t()] | [map()]
   def close(context, opts \\ []) do
-    formatter = Keyword.get(opts, :formatter, &inspect/1)
-
     context
     |> view()
-    |> Enum.flat_map(fn {step_name, steps} ->
-      Enum.map(steps, fn {label, value} ->
-        serialize(step_name, label, value, formatter)
-      end)
-    end)
+    |> DecisionLog.Serializer.serialize(opts)
   end
 
   @doc "Get the current log in a readable format"
@@ -180,10 +182,6 @@ defmodule DecisionLog.Explicit do
     context
     |> Enum.map(fn {label, steps} -> {label, Enum.reverse(steps)} end)
     |> Enum.reverse()
-  end
-
-  defp serialize(step_name, label, value, formatter) do
-    "#{step_name}_#{label}: #{formatter.(value)}"
   end
 
   @doc """
