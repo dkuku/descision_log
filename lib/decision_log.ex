@@ -94,7 +94,7 @@ defmodule DecisionLog do
       end
   """
 
-  @key :decision_log
+  @key :"$decision_log$"
   @default_tag :default
 
   @typedoc "Internal log state stored in process dictionary"

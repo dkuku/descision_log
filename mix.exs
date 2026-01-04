@@ -1,7 +1,7 @@
 defmodule DecisionLog.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @source_url "https://github.com/dkuku/decision_log"
 
   def project do
@@ -58,6 +58,7 @@ defmodule DecisionLog.MixProject do
     [
       {:decorator, "~> 1.4"},
       {:styler, "~> 1.0", only: :dev, runtime: false},
+      {:readme_tester, "~> 0.1.0", only: [:test, :dev], runtime: false},
       {:ex_doc, "~> 0.39", only: :dev, runtime: false}
     ]
   end

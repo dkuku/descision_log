@@ -68,6 +68,7 @@ log = DecisionLog.close()
 
 Use `trace` when you need to log a value and continue using it in pipes or `with` statements:
 
+<!-- readme_tester: skip -->
 ```elixir
 # In pipes
 result =
@@ -106,6 +107,7 @@ log = DecisionLog.close(formatter: formatter)
 
 For context-specific formatting, pass a formatter directly to `log/3`, `trace/3`, or `tagged/3`. The per-entry formatter takes precedence over the default:
 
+<!-- readme_tester: skip -->
 ```elixir
 defp format_user_summary(user), do: "User<#{user.id}>"
 defp format_user_detail(user), do: "User<#{user.id}, #{user.email}, #{user.role}>"
@@ -123,6 +125,7 @@ log = DecisionLog.close()
 
 This is useful when the same struct needs different representations in different contexts:
 
+<!-- readme_tester: skip -->
 ```elixir
 # In a benefits calculator - show allowances in calculate context
 benefit
@@ -153,6 +156,7 @@ log =
 
 With batch logging:
 
+<!-- readme_tester: skip -->
 ```elixir
 log =
   Log.new(:request)
@@ -164,6 +168,7 @@ log =
 
 With `trace` (returns `{value, context}` for threading both):
 
+<!-- readme_tester: skip -->
 ```elixir
 ctx = Log.new(:validation)
 
@@ -178,6 +183,7 @@ end
 The decorator automatically adds a section tag when entering a function.
 The caller manages the log lifecycle (start/close).
 
+<!-- readme_tester: skip -->
 ```elixir
 defmodule MyModule do
   use DecisionLog.Decorator
@@ -216,6 +222,7 @@ Benefits of this design:
 
 ### if/else
 
+<!-- readme_tester: skip -->
 ```elixir
 # Implicit
 if user_valid do
@@ -235,6 +242,7 @@ end
 
 ### case
 
+<!-- readme_tester: skip -->
 ```elixir
 # Implicit
 case items do
@@ -262,6 +270,7 @@ end
 
 ### cond
 
+<!-- readme_tester: skip -->
 ```elixir
 # Implicit
 discount =
@@ -290,6 +299,7 @@ discount =
 
 ### with
 
+<!-- readme_tester: skip -->
 ```elixir
 # Implicit
 result =
@@ -321,6 +331,7 @@ result =
 
 ### Pattern Matching in Function Heads
 
+<!-- readme_tester: skip -->
 ```elixir
 # With decorator - single annotation covers all clauses
 @decorate decision_log(:shipping)
@@ -396,6 +407,7 @@ config :decision_log, :default_format, :map
 
 Store decision logs in a `jsonb` column (array order is preserved):
 
+<!-- readme_tester: skip -->
 ```elixir
 # In your Ecto schema
 field :decision_log, {:array, :map}
@@ -422,6 +434,7 @@ WHERE elem->>'key' = 'total';
 
 See `examples/demo.ex` for complete examples comparing all three APIs:
 
+<!-- readme_tester: skip -->
 ```elixir
 # All three produce identical logs
 {result, log} = DecisionLog.Demo.Implicit.process_order(order)

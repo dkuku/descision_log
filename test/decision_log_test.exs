@@ -1,11 +1,12 @@
 defmodule DecisionLogTest do
   use ExUnit.Case, async: true
 
+  @dictionary_key :"$decision_log$"
   describe "start/0" do
     test "initializes an empty decision log" do
       DecisionLog.start()
 
-      assert Process.get(:decision_log) == []
+      assert Process.get(@dictionary_key) == []
     end
   end
 
@@ -13,7 +14,7 @@ defmodule DecisionLogTest do
     test "initializes decision log with a tagged section" do
       DecisionLog.start_tag(:my_section)
 
-      assert Process.get(:decision_log) == [{:my_section, []}]
+      assert Process.get(@dictionary_key) == [{:my_section, []}]
     end
   end
 
@@ -23,7 +24,7 @@ defmodule DecisionLogTest do
       DecisionLog.tag(:first_section)
       DecisionLog.tag(:second_section)
 
-      log = Process.get(:decision_log)
+      log = Process.get(@dictionary_key)
 
       assert [{:second_section, []}, {:first_section, []}] = log
     end
@@ -34,7 +35,7 @@ defmodule DecisionLogTest do
       DecisionLog.start_tag(:section)
       DecisionLog.log(:my_label, "some value")
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert steps == [{:my_label, "some value"}]
     end
@@ -44,7 +45,7 @@ defmodule DecisionLogTest do
       DecisionLog.log(:first, "value1")
       DecisionLog.log(:second, "value2")
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert [{:second, "value2"}, {:first, "value1"}] = steps
     end
@@ -55,7 +56,7 @@ defmodule DecisionLogTest do
       DecisionLog.start_tag(:section)
       DecisionLog.log(:date, ~D[2025-01-15], &Date.to_string/1)
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert [{:date, ~D[2025-01-15], formatter}] = steps
       assert is_function(formatter, 1)
@@ -82,11 +83,11 @@ defmodule DecisionLogTest do
     end
 
     test "is a no-op when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.log(:label, "value", &inspect/1)
 
       assert result == :ok
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
   end
 
@@ -95,7 +96,7 @@ defmodule DecisionLogTest do
       DecisionLog.start_tag(:section)
       DecisionLog.log("first value")
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert [{:step_0, "first value"}] = steps
     end
@@ -105,7 +106,7 @@ defmodule DecisionLogTest do
       DecisionLog.log("first value")
       DecisionLog.log("second value")
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert [{:step_1, "second value"}, {:step_0, "first value"}] = steps
     end
@@ -116,7 +117,7 @@ defmodule DecisionLogTest do
       DecisionLog.start_tag(:section)
       DecisionLog.log_all(first: "a", second: "b", third: "c")
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert [{:third, "c"}, {:second, "b"}, {:first, "a"}] = steps
     end
@@ -141,17 +142,17 @@ defmodule DecisionLogTest do
       DecisionLog.start_tag(:section)
       DecisionLog.log_all([])
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
 
       assert steps == []
     end
 
     test "is a no-op when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.log_all(a: 1, b: 2)
 
       assert result == :ok
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
   end
 
@@ -162,7 +163,7 @@ defmodule DecisionLogTest do
 
       assert result == "my_value"
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
       assert [{:my_label, "my_value"}] = steps
     end
 
@@ -208,11 +209,11 @@ defmodule DecisionLogTest do
     end
 
     test "returns value even when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.trace("value", :label)
 
       assert result == "value"
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
   end
 
@@ -223,7 +224,7 @@ defmodule DecisionLogTest do
 
       assert result == ~D[2025-01-15]
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
       assert [{:date, ~D[2025-01-15], formatter}] = steps
       assert is_function(formatter, 1)
     end
@@ -258,11 +259,11 @@ defmodule DecisionLogTest do
     end
 
     test "returns value even when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.trace("value", :label, &inspect/1)
 
       assert result == "value"
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
 
     test "same value can have different formatters in different contexts" do
@@ -290,7 +291,7 @@ defmodule DecisionLogTest do
 
       assert result == "my_value"
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
       assert [{:step_0, "my_value"}] = steps
     end
   end
@@ -312,7 +313,7 @@ defmodule DecisionLogTest do
     end
 
     test "returns items even when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       items = [a: 1, b: 2]
       result = DecisionLog.trace_all(items)
 
@@ -327,16 +328,16 @@ defmodule DecisionLogTest do
 
       assert result == {:my_label, "my_value"}
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
       assert [{:my_label, "my_value"}] = steps
     end
 
     test "returns tagged tuple even when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.tagged("value", :label)
 
       assert result == {:label, "value"}
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
   end
 
@@ -347,7 +348,7 @@ defmodule DecisionLogTest do
 
       assert result == {:date, ~D[2025-01-15]}
 
-      [{:section, steps} | _] = Process.get(:decision_log)
+      [{:section, steps} | _] = Process.get(@dictionary_key)
       assert [{:date, ~D[2025-01-15], formatter}] = steps
       assert is_function(formatter, 1)
     end
@@ -391,11 +392,11 @@ defmodule DecisionLogTest do
     end
 
     test "returns tagged tuple even when log not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
       result = DecisionLog.tagged("value", :label, &inspect/1)
 
       assert result == {:label, "value"}
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
   end
 
@@ -406,12 +407,12 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.close()
 
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
       assert result == ["section.step: \"value\""]
     end
 
     test "returns empty list when no log exists" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       result = DecisionLog.close()
 
@@ -488,12 +489,12 @@ defmodule DecisionLogTest do
 
       result = DecisionLog.get()
 
-      assert Process.get(:decision_log)
+      assert Process.get(@dictionary_key)
       assert is_list(result)
     end
 
     test "returns empty list when no log exists" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       result = DecisionLog.get()
 
@@ -546,7 +547,7 @@ defmodule DecisionLogTest do
         :ok
       end)
 
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
 
     test "cleans up log even when function raises" do
@@ -557,7 +558,7 @@ defmodule DecisionLogTest do
         end)
       end
 
-      assert Process.get(:decision_log) == nil
+      assert Process.get(@dictionary_key) == nil
     end
 
     test "returns empty log when no logging occurs" do
@@ -610,7 +611,7 @@ defmodule DecisionLogTest do
 
   describe "log!/2" do
     test "auto-starts log with default tag if not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       DecisionLog.log!(:check, :passed)
 
@@ -627,7 +628,7 @@ defmodule DecisionLogTest do
     end
 
     test "logs multiple values sequentially" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       DecisionLog.log!(:first, "a")
       DecisionLog.log!(:second, "b")
@@ -639,7 +640,7 @@ defmodule DecisionLogTest do
 
   describe "log!/3" do
     test "auto-starts log and creates tag if not initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       DecisionLog.log!(:validation, :user_check, :valid)
 
@@ -648,7 +649,7 @@ defmodule DecisionLogTest do
     end
 
     test "switches to tag if different from current" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       DecisionLog.log!(:validation, :check1, :ok)
       DecisionLog.log!(:pricing, :total, 100)
@@ -664,7 +665,7 @@ defmodule DecisionLogTest do
     end
 
     test "reuses current tag if same" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       DecisionLog.log!(:validation, :check1, :ok)
       DecisionLog.log!(:validation, :check2, :ok)
@@ -680,7 +681,7 @@ defmodule DecisionLogTest do
 
   describe "active?/0" do
     test "returns false when no log is initialized" do
-      Process.delete(:decision_log)
+      Process.delete(@dictionary_key)
 
       refute DecisionLog.active?()
     end

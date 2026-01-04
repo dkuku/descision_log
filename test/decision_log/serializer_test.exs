@@ -244,6 +244,7 @@ defmodule DecisionLog.SerializerTest do
 
   describe "struct handling" do
     defmodule TestStruct do
+      @moduledoc false
       defstruct [:id, :name]
     end
 
